@@ -8,6 +8,7 @@ TagManager:
   - NON-PRIOR
   - SPAWN
   - STREET
+  - CITIZEN
   layers:
   - Default
   - TransparentFX
@@ -47,4 +48,7 @@ TagManager:
     locked: 0
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Icons
+    uniqueID: 622772451
     locked: 0

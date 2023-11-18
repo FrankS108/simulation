@@ -6,22 +6,30 @@ using Random = UnityEngine.Random;
 
 public class CitizenController : MonoBehaviour
 {
-    
-    public Transform[] keyWaypoints;  // Waypoints clave (PRIORITARIOS)
-    public Transform[] spawnPoints;  //waypoints para spawnear
-    public float speed = 5f;
+    //variables para logica de infeccion/estados
 
+
+    //variables para logica de comportamiento
+    public Transform[] keyWaypoints;  // Waypoints clave (PRIORITARIOS) desde la definicion de ruta
+    public Transform[] spawnPoints;  //waypoints para spawnear from getSpawnPoints()
+    public float speed = 5f;
+    public int tipoDeruta;  //1 = prioritarios, 2= no prioritarios, 3 = mixto
+
+    private Transform spawnOrigin;
     private Transform currentTarget;
     private Transform[] waypointsAhead;
+    private bool recorridoTerminado = false;
 
     private int currentKeyWaypointIndex = 0;
     // Start is called before the first frame update
     void Start()
-    {
-       
-        //set initial position with spawn
-        setInitialPosition();
-        //inicializa waypointts a la vistaa
+    {        
+        // get automatically spawnpoints
+        getSpawnPoints();
+        // set key points (recorrido) en base a la variable prioritario
+        setRoute();
+
+        //inicializa waypointts a la vistaa para recorrido automatico
         waypointsAhead = new Transform[0];
     }
 
@@ -37,8 +45,42 @@ public class CitizenController : MonoBehaviour
         MoveToClosestWaypoint();
     }
 
+    void getSpawnPoints()
+    {
+        Debug.Log("gettin all these spawners bro");
+        // Encuentra todos los GameObjects en la escena con la etiqueta "SPAWN"
+        GameObject[] objectsWithTag = GameObject.FindGameObjectsWithTag("SPAWN");
+
+        // Array de Transforms para almacenar los componentes Transform de los objetos con la etiqueta
+        spawnPoints = new Transform[objectsWithTag.Length];
+
+        // Obtiene los componentes Transform de los GameObjects
+        for (int i = 0; i < objectsWithTag.Length; i++)
+        {
+            spawnPoints[i] = objectsWithTag[i].transform;
+        }
+
+        // una vez se obtienen los spawnpoints, se selecciona aleatoriamente uno
+        setInitialPosition();
+    }
+
+    void setRoute()
+    {
+        Debug.Log("defining my routes bro " + tipoDeruta);
+        if(tipoDeruta == 1)
+        {
+            GameObject[] objectsWithTag = GameObject.FindGameObjectsWithTag("PRIOR");
+        }
+        else if(tipoDeruta == 2)
+        {
+
+        }
+        
+    }
+
     void setInitialPosition()
     {
+        Debug.Log("settin position");
         // seleccionar aleatoriamente un de los transform de los spawners
         if (spawnPoints.Length > 0)
         {
@@ -47,6 +89,9 @@ public class CitizenController : MonoBehaviour
 
             // Obtener el Transform en el índice aleatorio
             Transform randomWaypoint = spawnPoints[randomIndex];
+
+            //guardar el spawn point para redigir al terminar recorrido
+            spawnOrigin = randomWaypoint;
 
             // Posicionar el objeto en el waypoint aleatorio
             transform.position = randomWaypoint.position;
@@ -71,11 +116,33 @@ public class CitizenController : MonoBehaviour
             // Verifica si ha llegado al objetivo más cercano y actualiza el índice del keyWaypoint
             if (Vector2.Distance(transform.position, currentTarget.position) < 0.1f)
             {
-                Debug.Log("Objetivo alcanzado: " + currentTarget.name);
-                if (currentTarget.CompareTag("PRIOR"))
+                //comprobar si se llego al spawn original y el recorrido termino
+                if(currentTarget == spawnOrigin && recorridoTerminado == true)
                 {
-                    currentKeyWaypointIndex = (currentKeyWaypointIndex + 1) % keyWaypoints.Length; // Avanza al siguiente keyWaypoint
-                    Debug.Log("LLEGAMOS AL PRIOR BRO: " + currentTarget.name);
+                    //destruir objeto
+                    Debug.Log("adios papu");
+                    Destroy(gameObject, 5);
+                }
+                //flujo normal si lleega a un keypoint en el arreglo
+                else if (currentTarget = keyWaypoints[currentKeyWaypointIndex])
+                {
+                    
+                    currentKeyWaypointIndex = (currentKeyWaypointIndex + 1); // Avanza al siguiente keyWaypoint
+                    Debug.LogWarning("LLEGAMOS AL key BRO: " + currentTarget.name);
+                    Debug.LogWarning("avanzando al key numero " + currentKeyWaypointIndex);
+                    // verificar si se han visitado todos los keypoints
+                    if (currentKeyWaypointIndex == keyWaypoints.Length && recorridoTerminado == false)
+                    {
+                        Debug.LogWarning("todos los keypoints han sido visitados, caminando de regreso al spawn");
+                        //si termino el recorrido, se agregar al arreglo de keypoints ir al 
+                        // Redimensionas el arreglo para agregar un nuevo Transform
+                        System.Array.Resize(ref keyWaypoints, keyWaypoints.Length + 1);
+
+                        // Asignas el nuevo Transform al final del arreglo
+                        keyWaypoints[keyWaypoints.Length - 1] = spawnOrigin;
+                        //condicional para eliminar al llegar al spawn
+                        recorridoTerminado = true;
+                    }
                 }
                 FindClosestTarget();
             }
@@ -111,7 +178,6 @@ public class CitizenController : MonoBehaviour
         }
     }
 
-
     // Puedes agregar la lógica de detección de colisionadores aquí si es necesario
     void OnTriggerEnter2D(Collider2D other)
     {
@@ -119,14 +185,10 @@ public class CitizenController : MonoBehaviour
         // Verifica si el objeto colisionado tiene un nombre
         if (other.CompareTag("STREET"))
         {
-            // Imprime el nombre del objeto en la consola de debug
-            Debug.Log("Colisión con calle: " + other.gameObject.name);
-
             // Agrega el waypoint al arreglo waypointsAhead si aún no está presente
             if (waypointsAhead.Length == 0)
             {
                 waypointsAhead = new Transform[] { other.transform };
-                Debug.Log("guardando calle en arreglo vacio: " + other.gameObject.name);
                 //closestObject se actualiza por medioo del collider ontriogger enter
                 // Encuentra el objetivo más cercano al próximo keyWaypoint
                 FindClosestTarget();
@@ -135,7 +197,6 @@ public class CitizenController : MonoBehaviour
             {
                 System.Array.Resize(ref waypointsAhead, waypointsAhead.Length + 1);
                 waypointsAhead[waypointsAhead.Length - 1] = other.transform;
-                Debug.Log("guardando calle: " + other.gameObject.name);
                 //closestObject se actualiza por medioo del collider ontriogger enter
                 // Encuentra el objetivo más cercano al próximo keyWaypoint
                 FindClosestTarget();
@@ -143,30 +204,38 @@ public class CitizenController : MonoBehaviour
         }
         else if (other.CompareTag("PRIOR"))
         {
-            // Imprime el nombre del objeto en la consola de debug
-            Debug.Log("Colisión con key: " + other.gameObject.name);
-
             // Agrega el waypoint al arreglo waypointsAhead si aún no está presente
             if (System.Array.IndexOf(waypointsAhead, other.transform) == -1)
             {
                 System.Array.Resize(ref waypointsAhead, waypointsAhead.Length + 1);
                 waypointsAhead[waypointsAhead.Length - 1] = other.transform;
-                Debug.Log("guardando key: " + other.gameObject.name);
+                //closestObject se actualiza por medioo del collider ontriogger enter
+                // Encuentra el objetivo más cercano al próximo keyWaypoint
+                FindClosestTarget();
+            }
+        }
+        else if (other.CompareTag("NON-PRIOR"))
+        {
+            // Agrega el waypoint al arreglo waypointsAhead si aún no está presente
+            if (System.Array.IndexOf(waypointsAhead, other.transform) == -1)
+            {
+                System.Array.Resize(ref waypointsAhead, waypointsAhead.Length + 1);
+                waypointsAhead[waypointsAhead.Length - 1] = other.transform;
                 //closestObject se actualiza por medioo del collider ontriogger enter
                 // Encuentra el objetivo más cercano al próximo keyWaypoint
                 FindClosestTarget();
             }
         }
         else if (other.CompareTag("SPAWN"))
-        {
-            // Imprime el nombre del objeto en la consola de debug
-            Debug.Log("Colisión con spawn: " + other.gameObject.name);
-
+        {           
             // Agrega el waypoint al arreglo waypointsAhead si aún no está presente
             if (System.Array.IndexOf(waypointsAhead, other.transform) == -1)
             {
                 System.Array.Resize(ref waypointsAhead, waypointsAhead.Length + 1);
                 waypointsAhead[waypointsAhead.Length - 1] = other.transform;
+                //closestObject se actualiza por medioo del collider ontriogger enter
+                // Encuentra el objetivo más cercano al próximo keyWaypoint
+                FindClosestTarget();
             }
         }
     }
@@ -175,29 +244,22 @@ public class CitizenController : MonoBehaviour
     {
         if (other.CompareTag("STREET"))
         {
-            // Imprime el nombre del objeto en la consola de debug
-            Debug.Log("sacando calle: " + other.gameObject.name);
-
             // Remueve el waypoint del arreglo waypointsAhead
             waypointsAhead = System.Array.FindAll(waypointsAhead, waypoint => waypoint != other.transform);
-            //closestObject se actualiza por medioo del collider ontriogger enter
-            // Encuentra el objetivo más cercano al próximo keyWaypoint
-            FindClosestTarget();
 
         }
         else if (other.CompareTag("PRIOR"))
         {
-            // Imprime el nombre del objeto en la consola de debug
-            Debug.Log("Colisión con key: " + other.gameObject.name);
-
+            // Remueve el waypoint del arreglo waypointsAhead
+            waypointsAhead = System.Array.FindAll(waypointsAhead, waypoint => waypoint != other.transform);
+        }
+        else if (other.CompareTag("NON-PRIOR"))
+        {
             // Remueve el waypoint del arreglo waypointsAhead
             waypointsAhead = System.Array.FindAll(waypointsAhead, waypoint => waypoint != other.transform);
         }
         else if (other.CompareTag("SPAWN"))
         {
-            // Imprime el nombre del objeto en la consola de debug
-            Debug.Log("Colisión con spawn: " + other.gameObject.name);
-
             // Remueve el waypoint del arreglo waypointsAhead
             waypointsAhead = System.Array.FindAll(waypointsAhead, waypoint => waypoint != other.transform);
         }
