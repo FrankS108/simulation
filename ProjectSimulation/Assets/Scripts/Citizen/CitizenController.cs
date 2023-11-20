@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -13,7 +14,7 @@ public class CitizenController : MonoBehaviour
     public Transform[] keyWaypoints;  // Waypoints clave (PRIORITARIOS) desde la definicion de ruta
     public Transform[] spawnPoints;  //waypoints para spawnear from getSpawnPoints()
     public float speed = 5f;
-    public int tipoDeruta;  //1 = prioritarios, 2= no prioritarios, 3 = mixto
+    public int tipoDeruta;  //1 = prioritarios, 2= no prioritarios, 3 o cualquier otro = mixto
 
     private Transform spawnOrigin;
     private Transform currentTarget;
@@ -23,24 +24,18 @@ public class CitizenController : MonoBehaviour
     private int currentKeyWaypointIndex = 0;
     // Start is called before the first frame update
     void Start()
-    {        
+    {
+        //inicializa waypointts a la vistaa para recorrido automatico
+        waypointsAhead = new Transform[0];
         // get automatically spawnpoints
         getSpawnPoints();
         // set key points (recorrido) en base a la variable prioritario
         setRoute();
-
-        //inicializa waypointts a la vistaa para recorrido automatico
-        waypointsAhead = new Transform[0];
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (keyWaypoints.Length == 0)
-        {
-            Debug.LogWarning("Asegúrate de asignar waypoints clave y calles en el inspector.");
-            return;
-        }
 
         MoveToClosestWaypoint();
     }
@@ -67,14 +62,87 @@ public class CitizenController : MonoBehaviour
     void setRoute()
     {
         Debug.Log("defining my routes bro " + tipoDeruta);
+        //obteniendo keypoints de acuerdo a la configuracion
         if(tipoDeruta == 1)
         {
             GameObject[] objectsWithTag = GameObject.FindGameObjectsWithTag("PRIOR");
+
+            keyWaypoints = new Transform[objectsWithTag.Length];
+
+            // Obtiene los componentes Transform de los GameObjects
+            for (int i = 0; i < objectsWithTag.Length; i++)
+            {
+                keyWaypoints[i] = objectsWithTag[i].transform;
+            }
+
+            // Elimina aleatoriamente algunos elementos del array
+            int elementsToRemove = Random.Range(1, keyWaypoints.Length);
+            for (int i = 0; i < elementsToRemove; i++)
+            {
+                int indexToRemove = Random.Range(0, keyWaypoints.Length);
+                keyWaypoints = keyWaypoints.Where((source, index) => index != indexToRemove).ToArray();
+            }
+
+            // Reordena aleatoriamente los elementos restantes del array
+            keyWaypoints = keyWaypoints.OrderBy(x => Random.value).ToArray();
         }
         else if(tipoDeruta == 2)
         {
+            GameObject[] objectsWithTag = GameObject.FindGameObjectsWithTag("NON-PRIOR");
 
+            // Array de Transforms para almacenar los componentes Transform de los objetos con la etiqueta
+            keyWaypoints = new Transform[objectsWithTag.Length];
+
+            // Obtiene los componentes Transform de los GameObjects
+            for (int i = 0; i < objectsWithTag.Length; i++)
+            {
+                keyWaypoints[i] = objectsWithTag[i].transform;
+            }
+
+            // Elimina aleatoriamente algunos elementos del array
+            int elementsToRemove = Random.Range(1, keyWaypoints.Length);
+            for (int i = 0; i < elementsToRemove; i++)
+            {
+                int indexToRemove = Random.Range(0, keyWaypoints.Length);
+                keyWaypoints = keyWaypoints.Where((source, index) => index != indexToRemove).ToArray();
+            }
+
+            // Reordena aleatoriamente los elementos restantes del array
+            keyWaypoints = keyWaypoints.OrderBy(x => Random.value).ToArray();
         }
+        else
+        {
+            // Obtiene todos los objetos con la primera etiqueta
+            GameObject[] objectsWithTag1 = GameObject.FindGameObjectsWithTag("PRIOR");
+
+            // Obtiene todos los objetos con la segunda etiqueta
+            GameObject[] objectsWithTag2 = GameObject.FindGameObjectsWithTag("NON-PRIOR");
+
+            // Combina ambos arreglos de GameObjects en uno solo
+            GameObject[] combinedObjects = objectsWithTag1.Concat(objectsWithTag2).ToArray();
+
+            // Array de Transforms para almacenar los componentes Transform de los objetos con la etiqueta
+            keyWaypoints = new Transform[combinedObjects.Length];
+
+            // Obtiene los componentes Transform de los GameObjects
+            for (int i = 0; i < combinedObjects.Length; i++)
+            {
+                keyWaypoints[i] = combinedObjects[i].transform;
+            }
+
+            // Elimina aleatoriamente algunos elementos del array
+            int elementsToRemove = Random.Range(1, keyWaypoints.Length);
+            for (int i = 0; i < elementsToRemove; i++)
+            {
+                int indexToRemove = Random.Range(0, keyWaypoints.Length);
+                keyWaypoints = keyWaypoints.Where((source, index) => index != indexToRemove).ToArray();
+            }
+
+            // Reordena aleatoriamente los elementos restantes del array
+            keyWaypoints = keyWaypoints.OrderBy(x => Random.value).ToArray();
+        }
+
+        Debug.Log("Cantidad de keypoints seleccionados: " + keyWaypoints.Length);
         
     }
 
@@ -124,14 +192,14 @@ public class CitizenController : MonoBehaviour
                     Destroy(gameObject, 5);
                 }
                 //flujo normal si lleega a un keypoint en el arreglo
-                else if (currentTarget = keyWaypoints[currentKeyWaypointIndex])
+                else if (currentTarget == keyWaypoints[currentKeyWaypointIndex] && recorridoTerminado == false)
                 {
                     
                     currentKeyWaypointIndex = (currentKeyWaypointIndex + 1); // Avanza al siguiente keyWaypoint
                     Debug.LogWarning("LLEGAMOS AL key BRO: " + currentTarget.name);
                     Debug.LogWarning("avanzando al key numero " + currentKeyWaypointIndex);
                     // verificar si se han visitado todos los keypoints
-                    if (currentKeyWaypointIndex == keyWaypoints.Length && recorridoTerminado == false)
+                    if (currentKeyWaypointIndex == keyWaypoints.Length)
                     {
                         Debug.LogWarning("todos los keypoints han sido visitados, caminando de regreso al spawn");
                         //si termino el recorrido, se agregar al arreglo de keypoints ir al 
@@ -205,7 +273,14 @@ public class CitizenController : MonoBehaviour
         else if (other.CompareTag("PRIOR"))
         {
             // Agrega el waypoint al arreglo waypointsAhead si aún no está presente
-            if (System.Array.IndexOf(waypointsAhead, other.transform) == -1)
+            if (waypointsAhead.Length == 0)
+            {
+                waypointsAhead = new Transform[] { other.transform };
+                //closestObject se actualiza por medioo del collider ontriogger enter
+                // Encuentra el objetivo más cercano al próximo keyWaypoint
+                FindClosestTarget();
+            }
+            else if (System.Array.IndexOf(waypointsAhead, other.transform) == -1)
             {
                 System.Array.Resize(ref waypointsAhead, waypointsAhead.Length + 1);
                 waypointsAhead[waypointsAhead.Length - 1] = other.transform;
@@ -217,7 +292,14 @@ public class CitizenController : MonoBehaviour
         else if (other.CompareTag("NON-PRIOR"))
         {
             // Agrega el waypoint al arreglo waypointsAhead si aún no está presente
-            if (System.Array.IndexOf(waypointsAhead, other.transform) == -1)
+            if (waypointsAhead.Length == 0)
+            {
+                waypointsAhead = new Transform[] { other.transform };
+                //closestObject se actualiza por medioo del collider ontriogger enter
+                // Encuentra el objetivo más cercano al próximo keyWaypoint
+                FindClosestTarget();
+            }
+            else if (System.Array.IndexOf(waypointsAhead, other.transform) == -1)
             {
                 System.Array.Resize(ref waypointsAhead, waypointsAhead.Length + 1);
                 waypointsAhead[waypointsAhead.Length - 1] = other.transform;
@@ -227,9 +309,16 @@ public class CitizenController : MonoBehaviour
             }
         }
         else if (other.CompareTag("SPAWN"))
-        {           
+        {
             // Agrega el waypoint al arreglo waypointsAhead si aún no está presente
-            if (System.Array.IndexOf(waypointsAhead, other.transform) == -1)
+            if (waypointsAhead.Length == 0)
+            {
+                waypointsAhead = new Transform[] { other.transform };
+                //closestObject se actualiza por medioo del collider ontriogger enter
+                // Encuentra el objetivo más cercano al próximo keyWaypoint
+                FindClosestTarget();
+            }
+            else if (System.Array.IndexOf(waypointsAhead, other.transform) == -1)
             {
                 System.Array.Resize(ref waypointsAhead, waypointsAhead.Length + 1);
                 waypointsAhead[waypointsAhead.Length - 1] = other.transform;
