@@ -8,7 +8,8 @@ using Random = UnityEngine.Random;
 public class CitizenController : MonoBehaviour
 {
     //variables para logica de infeccion/estados
-
+    public string estado;
+    public bool cubrebocas;
 
     //variables para logica de comportamiento
     public Transform[] keyWaypoints;  // Waypoints clave (PRIORITARIOS) desde la definicion de ruta
@@ -36,7 +37,7 @@ public class CitizenController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        //logica de movimiento
         MoveToClosestWaypoint();
     }
 
@@ -246,6 +247,37 @@ public class CitizenController : MonoBehaviour
         }
     }
 
+    void actualizaEstado(bool cubrebocas)
+    {
+
+        //logica para calcular si me enferme xd
+
+        if(!cubrebocas)
+        {
+            Debug.LogWarning("Ahhhh ese vato no traia cubrebocas y me tosio en la cara DX");
+        }
+        if(estado == "enfermo")
+        {
+            Debug.LogWarning("¡Chin, me enfermé, voy a esperar un ratito en lo q agarro aire mano");
+            StartCoroutine(ReactivarDespuesDeTiempo(5f));
+        }
+        if (estado == "recuperado")
+        {
+            Debug.LogWarning("a seguirle xd");
+        }
+
+    }
+
+    IEnumerator ReactivarDespuesDeTiempo(float tiempo)
+    {
+        yield return new WaitForSeconds(tiempo); // Esperar durante 'tiempo' segundos
+
+        estado = "recuperado"; // Cambiar el estado a "activo" después de esperar
+        Debug.LogWarning("ya me siento mejor manito");
+        //llamda solo para pruebas, no necesario
+        actualizaEstado(true);
+    }
+
     // Puedes agregar la lógica de detección de colisionadores aquí si es necesario
     void OnTriggerEnter2D(Collider2D other)
     {
@@ -327,6 +359,20 @@ public class CitizenController : MonoBehaviour
                 FindClosestTarget();
             }
         }
+        else if (other.CompareTag("CITIZEN"))
+        {
+            CitizenController otroCiudadano = other.GetComponent<CitizenController>();
+
+            if (otroCiudadano != null)
+            {
+                if (otroCiudadano.estado == "enfermo")
+                {
+                    //detectar el uso de cubrebocas, mandar a la funcion el valor de cubrebocas
+                    estado = "enfermo";
+                    actualizaEstado(otroCiudadano.cubrebocas);
+                }
+            }
+        }
     }
 
     void OnTriggerExit2D(Collider2D other)
@@ -351,6 +397,15 @@ public class CitizenController : MonoBehaviour
         {
             // Remueve el waypoint del arreglo waypointsAhead
             waypointsAhead = System.Array.FindAll(waypointsAhead, waypoint => waypoint != other.transform);
+        }
+        else if (other.CompareTag("CITIZEN"))
+        {
+            CitizenController otroCiudadano = other.GetComponent<CitizenController>();
+
+            if (otroCiudadano != null)
+            {
+                //controlar si baja la probabilidad ya q se vaya del rango de 2mts
+            }
         }
     }
 }
