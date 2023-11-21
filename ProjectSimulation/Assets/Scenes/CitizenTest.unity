@@ -616,7 +616,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 639a4ccfc89eb1e449eef77c2dceb920, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  estado: enfermo
+  estado: 1
+  startInfected: 1
+  cubrebocas: 1
+  state: {fileID: 1087585264}
   keyWaypoints: []
   spawnPoints: []
   speed: 8
@@ -3395,7 +3398,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 639a4ccfc89eb1e449eef77c2dceb920, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  estado: 
+  estado: 0
+  startInfected: 0
+  cubrebocas: 0
+  state: {fileID: 922791955}
   keyWaypoints: []
   spawnPoints: []
   speed: 8

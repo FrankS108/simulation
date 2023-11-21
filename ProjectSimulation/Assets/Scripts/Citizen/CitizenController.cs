@@ -8,8 +8,19 @@ using Random = UnityEngine.Random;
 public class CitizenController : MonoBehaviour
 {
     //variables para logica de infeccion/estados
-    public string estado;
+    [SerializeField] private Virus virus;
+    public State estado;
+    public enum State
+    {
+        SANO,
+        INFECTADO,
+        RECUPERADO,
+        MUERTO
+    }
+    [SerializeField] public bool startInfected = false;
     public bool cubrebocas;
+    public ManagerCondition managerCondition;
+    [SerializeField] private GameObject state;
 
     //variables para logica de comportamiento
     public Transform[] keyWaypoints;  // Waypoints clave (PRIORITARIOS) desde la definicion de ruta
@@ -32,6 +43,12 @@ public class CitizenController : MonoBehaviour
         getSpawnPoints();
         // set key points (recorrido) en base a la variable prioritario
         setRoute();
+
+        virus = new Virus();
+
+        estado = startInfected ? State.INFECTADO : State.SANO;
+
+        managerCondition = new ManagerCondition(state, estado.ToString());
     }
 
     // Update is called once per frame
@@ -43,7 +60,7 @@ public class CitizenController : MonoBehaviour
 
     void getSpawnPoints()
     {
-        Debug.Log("gettin all these spawners bro");
+       // Debug.Log("gettin all these spawners bro");
         // Encuentra todos los GameObjects en la escena con la etiqueta "SPAWN"
         GameObject[] objectsWithTag = GameObject.FindGameObjectsWithTag("SPAWN");
 
@@ -62,7 +79,7 @@ public class CitizenController : MonoBehaviour
 
     void setRoute()
     {
-        Debug.Log("defining my routes bro " + tipoDeruta);
+        //Debug.Log("defining my routes bro " + tipoDeruta);
         //obteniendo keypoints de acuerdo a la configuracion
         if(tipoDeruta == 1)
         {
@@ -143,13 +160,13 @@ public class CitizenController : MonoBehaviour
             keyWaypoints = keyWaypoints.OrderBy(x => Random.value).ToArray();
         }
 
-        Debug.Log("Cantidad de keypoints seleccionados: " + keyWaypoints.Length);
+        //Debug.Log("Cantidad de keypoints seleccionados: " + keyWaypoints.Length);
         
     }
 
     void setInitialPosition()
     {
-        Debug.Log("settin position");
+       // Debug.Log("settin position");
         // seleccionar aleatoriamente un de los transform de los spawners
         if (spawnPoints.Length > 0)
         {
@@ -166,11 +183,11 @@ public class CitizenController : MonoBehaviour
             transform.position = randomWaypoint.position;
 
             // Ahora puedes usar 'randomWaypoint' según tus necesidades
-            Debug.Log("Waypoint aleatorio seleccionado: " + randomWaypoint.name);
+            //Debug.Log("Waypoint aleatorio seleccionado: " + randomWaypoint.name);
         }
         else
         {
-            Debug.LogWarning("El arreglo de spawnpoints está vacío.");
+            //Debug.LogWarning("El arreglo de spawnpoints está vacío.");
         }
     }
 
@@ -189,7 +206,7 @@ public class CitizenController : MonoBehaviour
                 if(currentTarget == spawnOrigin && recorridoTerminado == true)
                 {
                     //destruir objeto
-                    Debug.Log("adios papu");
+                    //Debug.Log("adios papu");
                     Destroy(gameObject, 5);
                 }
                 //flujo normal si lleega a un keypoint en el arreglo
@@ -197,12 +214,12 @@ public class CitizenController : MonoBehaviour
                 {
                     
                     currentKeyWaypointIndex = (currentKeyWaypointIndex + 1); // Avanza al siguiente keyWaypoint
-                    Debug.LogWarning("LLEGAMOS AL key BRO: " + currentTarget.name);
-                    Debug.LogWarning("avanzando al key numero " + currentKeyWaypointIndex);
+                    //Debug.LogWarning("LLEGAMOS AL key BRO: " + currentTarget.name);
+                    //Debug.LogWarning("avanzando al key numero " + currentKeyWaypointIndex);
                     // verificar si se han visitado todos los keypoints
                     if (currentKeyWaypointIndex == keyWaypoints.Length)
                     {
-                        Debug.LogWarning("todos los keypoints han sido visitados, caminando de regreso al spawn");
+                        //Debug.LogWarning("todos los keypoints han sido visitados, caminando de regreso al spawn");
                         //si termino el recorrido, se agregar al arreglo de keypoints ir al 
                         // Redimensionas el arreglo para agregar un nuevo Transform
                         System.Array.Resize(ref keyWaypoints, keyWaypoints.Length + 1);
@@ -226,7 +243,7 @@ public class CitizenController : MonoBehaviour
 
         // Encuentra el próximo keyWaypoint
         Transform nextKeyWaypoint = keyWaypoints[currentKeyWaypointIndex];
-        Debug.Log("objetivo actual: " + nextKeyWaypoint.name);
+        //Debug.Log("objetivo actual: " + nextKeyWaypoint.name);
 
         // Encuentra el objetivo más cercano al próximo keyWaypoint
         foreach (Transform waypoint in waypointsAhead)
@@ -241,41 +258,58 @@ public class CitizenController : MonoBehaviour
                 {
                     currentTarget = waypoint;
                     closestDistance = distanceToNextKeyWaypoint;
-                    Debug.Log("current actual: " + currentTarget.name);
+                    //Debug.Log("current actual: " + currentTarget.name);
                 }
             }
         }
     }
 
-    void actualizaEstado(bool cubrebocas)
+    void actualizaEstado(bool cubrebocas, State estado)
     {
 
         //logica para calcular si me enferme xd
+        double probability = virus.InfectionRate;
 
-        if(!cubrebocas)
+        if (!cubrebocas)
+        {
+            probability += virus.NoFaceMaskRate;
+        }
+
+        double result = Random.Range(1, 100) / 100f;
+
+        Debug.Log("La probabilidad es: " + probability + " y el resultado es: " + result);
+
+        if(result <= probability)
+        {
+            this.estado = estado;
+            managerCondition.UpdateCondition(estado.ToString());
+        }
+
+        /*
+        if (!cubrebocas)
         {
             Debug.LogWarning("Ahhhh ese vato no traia cubrebocas y me tosio en la cara DX");
         }
-        if(estado == "enfermo")
+        if(estado == State.INFECTADO)
         {
             Debug.LogWarning("¡Chin, me enfermé, voy a esperar un ratito en lo q agarro aire mano");
             StartCoroutine(ReactivarDespuesDeTiempo(5f));
         }
-        if (estado == "recuperado")
+        if (estado == State.RECUPERADO)
         {
             Debug.LogWarning("a seguirle xd");
         }
-
+        */
     }
 
     IEnumerator ReactivarDespuesDeTiempo(float tiempo)
     {
         yield return new WaitForSeconds(tiempo); // Esperar durante 'tiempo' segundos
 
-        estado = "recuperado"; // Cambiar el estado a "activo" después de esperar
-        Debug.LogWarning("ya me siento mejor manito");
+        estado = State.RECUPERADO; // Cambiar el estado a "activo" después de esperar
+        //Debug.LogWarning("ya me siento mejor manito");
         //llamda solo para pruebas, no necesario
-        actualizaEstado(true);
+        //actualizaEstado(true);
     }
 
     // Puedes agregar la lógica de detección de colisionadores aquí si es necesario
@@ -365,11 +399,10 @@ public class CitizenController : MonoBehaviour
 
             if (otroCiudadano != null)
             {
-                if (otroCiudadano.estado == "enfermo")
+                if (otroCiudadano.estado == State.INFECTADO)
                 {
                     //detectar el uso de cubrebocas, mandar a la funcion el valor de cubrebocas
-                    estado = "enfermo";
-                    actualizaEstado(otroCiudadano.cubrebocas);
+                    actualizaEstado(otroCiudadano.cubrebocas, otroCiudadano.estado);
                 }
             }
         }

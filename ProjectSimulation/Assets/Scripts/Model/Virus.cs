@@ -10,6 +10,7 @@ public class Virus
     [SerializeField] private float exposedRate = 0.1f;
     [SerializeField] private float recoveryRate = 0.2f;
     [SerializeField] private float mortalityRate = 0.01f;
+    [SerializeField] private float noFaceMaskRate = 0.2f;
     [SerializeField] private static Virus instance;
 
     public static Virus GetInstance()
@@ -35,5 +36,7 @@ public class Virus
     public float RecoveryRate { get { return recoveryRate; } }
 
     public float Mortality { get { return mortalityRate; } }
+
+    public float NoFaceMaskRate { get { return noFaceMaskRate; } }
 
 }
