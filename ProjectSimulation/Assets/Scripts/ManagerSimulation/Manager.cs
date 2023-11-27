@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Manager : MonoBehaviour
 {
@@ -19,15 +21,27 @@ public class Manager : MonoBehaviour
     [SerializeField] private double dead = 0;
     [SerializeField] private int speedTime = 100;
 
+    [SerializeField] private List<Slider> slider = new List<Slider>();
+    [SerializeField] private List<TextMeshProUGUI> text = new List<TextMeshProUGUI>();
+    [SerializeField] private List<Button> button = new List<Button>();
+   
+    //Distancia
+    //Probabilidades
+    //Cantidad de personas
+    //Velocidad 
+
     // Start is called before the first frame update
     void Start()
     {
-        Time.timeScale = speedTime;
+        /*Time.timeScale = speedTime;
         suceptible = N - 1;
         daysInSeconds = daysOfSimulation * SecondsInOneDay;
-        virus = new Virus();
         StartCoroutine(Simulation());
-        //SimulationCicle();
+        //SimulationCicle();*/
+        virus = new Virus();
+
+        InitializeUI();
+        
     }
 
     // Update is called once per frame
@@ -38,6 +52,23 @@ public class Manager : MonoBehaviour
 
     private void FixedUpdate()
     {
+        UpdateInfectionRate();
+        UpdateRecoveryRate();
+        UpdateMortality();
+        UpdateNoMaskRate();
+    }
+
+    private void InitializeUI()
+    {
+        slider[0].value = virus.InfectionRate;
+        slider[1].value = virus.RecoveryRate;
+        slider[2].value = virus.Mortality;
+        slider[3].value = virus.NoFaceMaskRate;
+
+        text[0].text = slider[0].value.ToString();
+        text[1].text = slider[1].value.ToString();
+        text[2].text = slider[2].value.ToString();
+        text[3].text = slider[3].value.ToString();
     }
 
     private void ProvisionalSimulation()
@@ -75,4 +106,30 @@ public class Manager : MonoBehaviour
             StartCoroutine(Simulation());
         }
     }
+
+    private void UpdateInfectionRate()
+    {
+        virus.InfectionRate = slider[0].value;
+        text[0].text = virus.InfectionRate.ToString();
+    }
+
+    private void UpdateRecoveryRate()
+    {
+        virus.RecoveryRate = slider[1].value;
+        text[1].text = virus.RecoveryRate.ToString();
+    }
+
+    private void UpdateMortality()
+    {
+        virus.Mortality = slider[2].value;
+        text[2].text = virus.Mortality.ToString();
+    }
+
+    private void UpdateNoMaskRate()
+    {
+        virus.NoFaceMaskRate = slider[3].value;
+        text[3].text = virus.NoFaceMaskRate.ToString();
+    }
+
+    
 }

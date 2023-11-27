@@ -58,6 +58,33 @@ public class CitizenController : MonoBehaviour
         MoveToClosestWaypoint();
     }
 
+    private IEnumerator virusDevelopment()
+    {
+        //Repetir cada cierto tiempo
+        Debug.Log("Inicio el desarrollo del virus");
+        double probability = Random.Range(1, 100) / 100f; // O.1 -> 1
+        Debug.Log("La probabilidad es: " + probability);
+        if(probability <= virus.RecoveryRate)
+        {
+            this.estado = State.RECUPERADO;
+        }
+
+        if(probability < 0.1)
+        {
+            this.estado = State.MUERTO;
+        }
+
+
+        managerCondition.UpdateCondition(this.estado.ToString());
+        yield return new WaitForSeconds(1);
+
+        if(this.estado != State.MUERTO)
+        {
+            Debug.Log("Inicia otra vez");
+            StartCoroutine(virusDevelopment());
+        }
+    }
+
     void getSpawnPoints()
     {
        // Debug.Log("gettin all these spawners bro");
@@ -207,7 +234,7 @@ public class CitizenController : MonoBehaviour
                 {
                     //destruir objeto
                     //Debug.Log("adios papu");
-                    Destroy(gameObject, 5);
+                    //Destroy(gameObject, 5);
                 }
                 //flujo normal si lleega a un keypoint en el arreglo
                 else if (currentTarget == keyWaypoints[currentKeyWaypointIndex] && recorridoTerminado == false)
@@ -277,29 +304,14 @@ public class CitizenController : MonoBehaviour
 
         double result = Random.Range(1, 100) / 100f;
 
-        Debug.Log("La probabilidad es: " + probability + " y el resultado es: " + result);
+        
 
         if(result <= probability)
         {
             this.estado = estado;
             managerCondition.UpdateCondition(estado.ToString());
+            StartCoroutine(virusDevelopment());
         }
-
-        /*
-        if (!cubrebocas)
-        {
-            Debug.LogWarning("Ahhhh ese vato no traia cubrebocas y me tosio en la cara DX");
-        }
-        if(estado == State.INFECTADO)
-        {
-            Debug.LogWarning("¡Chin, me enfermé, voy a esperar un ratito en lo q agarro aire mano");
-            StartCoroutine(ReactivarDespuesDeTiempo(5f));
-        }
-        if (estado == State.RECUPERADO)
-        {
-            Debug.LogWarning("a seguirle xd");
-        }
-        */
     }
 
     IEnumerator ReactivarDespuesDeTiempo(float tiempo)

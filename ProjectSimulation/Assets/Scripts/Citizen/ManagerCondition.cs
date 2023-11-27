@@ -34,7 +34,6 @@ public class ManagerCondition
         { 
             if(condition.Name == state)
             {
-                Debug.Log("Lo encontre");
                 return conditions.IndexOf(condition);
             }
         }

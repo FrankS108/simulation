@@ -618,7 +618,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   estado: 1
   startInfected: 1
-  cubrebocas: 1
+  cubrebocas: 0
   state: {fileID: 1087585264}
   keyWaypoints: []
   spawnPoints: []

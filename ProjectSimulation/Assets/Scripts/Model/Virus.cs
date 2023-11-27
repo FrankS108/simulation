@@ -29,14 +29,14 @@ public class Virus
         return instance == null ? true : false;
     }
 
-    public float InfectionRate { get {  return  infectionRate; } }
+    public float InfectionRate { get {  return  infectionRate; } set { infectionRate = value; } }
 
-    public float ExposedRate {  get { return exposedRate; } }
+    public float ExposedRate {  get { return exposedRate; } set { exposedRate = value; } }
 
-    public float RecoveryRate { get { return recoveryRate; } }
+    public float RecoveryRate { get { return recoveryRate; } set { recoveryRate = value; } }
 
-    public float Mortality { get { return mortalityRate; } }
+    public float Mortality { get { return mortalityRate; } set { mortalityRate = value; } }
 
-    public float NoFaceMaskRate { get { return noFaceMaskRate; } }
+    public float NoFaceMaskRate { get { return noFaceMaskRate; } set { noFaceMaskRate = value; } }
 
 }
