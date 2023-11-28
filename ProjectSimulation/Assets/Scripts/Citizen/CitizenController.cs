@@ -32,7 +32,7 @@ public class CitizenController : MonoBehaviour
     private Transform currentTarget;
     private Transform[] waypointsAhead;
     private bool recorridoTerminado = false;
-
+    private bool puedeMoverse = true;
     private int currentKeyWaypointIndex = 0;
     // Start is called before the first frame update
     void Start()
@@ -55,7 +55,10 @@ public class CitizenController : MonoBehaviour
     void Update()
     {
         //logica de movimiento
-        MoveToClosestWaypoint();
+        if(puedeMoverse)
+        {
+            MoveToClosestWaypoint();
+        }
     }
 
     private IEnumerator virusDevelopment()
@@ -220,46 +223,70 @@ public class CitizenController : MonoBehaviour
 
     void MoveToClosestWaypoint()
     {
-        
-        // Mueve el objeto hacia el objetivo más cercano
-        if (currentTarget != null)
+        //comprobar que el ciudadano sigue vivo
+        if(estado == State.MUERTO)
         {
-            transform.position = Vector2.MoveTowards(transform.position, currentTarget.position, Time.deltaTime);
-
-            // Verifica si ha llegado al objetivo más cercano y actualiza el índice del keyWaypoint
-            if (Vector2.Distance(transform.position, currentTarget.position) < 0.1f)
-            {
-                //comprobar si se llego al spawn original y el recorrido termino
-                if(currentTarget == spawnOrigin && recorridoTerminado == true)
-                {
-                    //destruir objeto
-                    //Debug.Log("adios papu");
-                    //Destroy(gameObject, 5);
-                }
-                //flujo normal si lleega a un keypoint en el arreglo
-                else if (currentTarget == keyWaypoints[currentKeyWaypointIndex] && recorridoTerminado == false)
-                {
-                    
-                    currentKeyWaypointIndex = (currentKeyWaypointIndex + 1); // Avanza al siguiente keyWaypoint
-                    //Debug.LogWarning("LLEGAMOS AL key BRO: " + currentTarget.name);
-                    //Debug.LogWarning("avanzando al key numero " + currentKeyWaypointIndex);
-                    // verificar si se han visitado todos los keypoints
-                    if (currentKeyWaypointIndex == keyWaypoints.Length)
-                    {
-                        //Debug.LogWarning("todos los keypoints han sido visitados, caminando de regreso al spawn");
-                        //si termino el recorrido, se agregar al arreglo de keypoints ir al 
-                        // Redimensionas el arreglo para agregar un nuevo Transform
-                        System.Array.Resize(ref keyWaypoints, keyWaypoints.Length + 1);
-
-                        // Asignas el nuevo Transform al final del arreglo
-                        keyWaypoints[keyWaypoints.Length - 1] = spawnOrigin;
-                        //condicional para eliminar al llegar al spawn
-                        recorridoTerminado = true;
-                    }
-                }
-                FindClosestTarget();
-            }
+            //si esta muerto, detener movimiento y regresar a spawner
+            puedeMoverse= false;
+            transform.position = spawnOrigin.position;
         }
+        
+            // Mueve el objeto hacia el objetivo más cercano
+            else if (currentTarget != null)
+            {
+                transform.position = Vector2.MoveTowards(transform.position, currentTarget.position, Time.deltaTime);
+
+                // Verifica si ha llegado al objetivo más cercano y actualiza el índice del keyWaypoint
+                if (Vector2.Distance(transform.position, currentTarget.position) < 0.1f)
+                {
+                    //comprobar si se llego al spawn original y el recorrido termino
+                    if (currentTarget == spawnOrigin && recorridoTerminado == true)
+                    {
+                        //reiniciar rutina
+                        ReiniciarRutina();
+                    }
+                    //flujo normal si lleega a un keypoint en el arreglo
+                    else if (currentTarget == keyWaypoints[currentKeyWaypointIndex] && recorridoTerminado == false)
+                    {
+
+                        currentKeyWaypointIndex = (currentKeyWaypointIndex + 1); // Avanza al siguiente keyWaypoint
+                                                                                 //Debug.LogWarning("LLEGAMOS AL key BRO: " + currentTarget.name);
+                                                                                 //Debug.LogWarning("avanzando al key numero " + currentKeyWaypointIndex);
+                                                                                 // verificar si se han visitado todos los keypoints
+                        if (currentKeyWaypointIndex == keyWaypoints.Length)
+                        {
+                            //Debug.LogWarning("todos los keypoints han sido visitados, caminando de regreso al spawn");
+                            //si termino el recorrido, se agregar al arreglo de keypoints ir al 
+                            // Redimensionas el arreglo para agregar un nuevo Transform
+                            System.Array.Resize(ref keyWaypoints, keyWaypoints.Length + 1);
+
+                            // Asignas el nuevo Transform al final del arreglo
+                            keyWaypoints[keyWaypoints.Length - 1] = spawnOrigin;
+                            //condicional para eliminar al llegar al spawn
+                            recorridoTerminado = true;
+                        }
+                    }
+                    FindClosestTarget();
+                }
+            }
+    }
+
+    void ReiniciarRutina()
+    {
+        //deteniendo logica de movimiento
+        puedeMoverse = false;
+        //reiniciando index
+        currentKeyWaypointIndex = 0;
+        //reiniciando variable de recorridoTerminado
+        recorridoTerminado = false;
+        //vaciando arreglo de keyWaypoints
+        keyWaypoints = new Transform[0];
+        //esperando tiempo aleatorio para volver a inicializar posicion
+        StartCoroutine(ReactivarDespuesDeTiempo(7f));
+        //volviendo a elegir keywaypoints (en vase al tipo de ruta)
+        setInitialPosition();
+        //volviendo a elegir rutas()
+        setRoute();
     }
 
     void FindClosestTarget()
@@ -317,8 +344,8 @@ public class CitizenController : MonoBehaviour
     IEnumerator ReactivarDespuesDeTiempo(float tiempo)
     {
         yield return new WaitForSeconds(tiempo); // Esperar durante 'tiempo' segundos
-
-        estado = State.RECUPERADO; // Cambiar el estado a "activo" después de esperar
+        puedeMoverse = true;
+        //estado = State.RECUPERADO; // Cambiar el estado a "activo" después de esperar
         //Debug.LogWarning("ya me siento mejor manito");
         //llamda solo para pruebas, no necesario
         //actualizaEstado(true);
