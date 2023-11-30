@@ -253,6 +253,10 @@ public class CitizenController : MonoBehaviour
                                                                                  //Debug.LogWarning("LLEGAMOS AL key BRO: " + currentTarget.name);
                                                                                  //Debug.LogWarning("avanzando al key numero " + currentKeyWaypointIndex);
                                                                                  // verificar si se han visitado todos los keypoints
+                        //si llega a un keywaypoint, esperar 10 segundos
+                        puedeMoverse = false;
+                        StartCoroutine(ReactivarDespuesDeTiempo(10f));
+
                         if (currentKeyWaypointIndex == keyWaypoints.Length)
                         {
                             //Debug.LogWarning("todos los keypoints han sido visitados, caminando de regreso al spawn");
