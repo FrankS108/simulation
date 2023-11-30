@@ -72,14 +72,14 @@ public class CitizenController : MonoBehaviour
             this.estado = State.RECUPERADO;
         }
 
-        if(probability < 0.1)
+        if(probability < 0.1 && this.estado == State.INFECTADO)
         {
             this.estado = State.MUERTO;
         }
 
 
         managerCondition.UpdateCondition(this.estado.ToString());
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(5);
 
         if(this.estado != State.MUERTO)
         {
